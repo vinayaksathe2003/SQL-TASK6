@@ -1,0 +1,71 @@
+--  Show each product with total quantity sold (using subquery)
+SELECT 
+    p.product_name,
+    (SELECT SUM(od.quantity)
+     FROM Order_Details od
+     WHERE od.product_id = p.product_id) AS total_sold
+FROM Products p;
+
+--  Show each customer with total amount spent
+SELECT 
+    c.first_name,
+    (SELECT SUM(o.total_amount)
+     FROM Orders o
+     WHERE o.customer_id = c.customer_id) AS total_spent
+FROM Customers c;
+
+--  Find products more expensive than the average price
+SELECT product_name, price
+FROM Products
+WHERE price > (SELECT AVG(price) FROM Products);
+
+--  Find customers who placed at least one order
+SELECT first_name, last_name
+FROM Customers
+WHERE customer_id IN (SELECT customer_id FROM Orders);
+
+--  Find orders with total amount greater than the average order total
+SELECT order_id, total_amount
+FROM Orders
+WHERE total_amount > (SELECT AVG(total_amount) FROM Orders);
+
+--  Show average spending per customer using a derived table
+SELECT 
+    first_name, 
+    last_name, 
+    total_spent
+FROM (
+    SELECT c.first_name, c.last_name, SUM(o.total_amount) AS total_spent
+    FROM Customers c
+    JOIN Orders o ON c.customer_id = o.customer_id
+    GROUP BY c.first_name, c.last_name
+) AS customer_summary
+WHERE total_spent > 30000;
+
+--  Find products with sales above the average sale of that product
+SELECT product_name, price
+FROM Products p
+WHERE price > (
+    SELECT AVG(price)
+    FROM Products
+    WHERE category = p.category
+);
+
+--  Find customers who placed more than one order
+SELECT first_name, last_name
+FROM Customers c
+WHERE (
+    SELECT COUNT(*)
+    FROM Orders o
+    WHERE o.customer_id = c.customer_id
+) > 1;
+
+--  List customers who have made at least one payment
+SELECT first_name, last_name
+FROM Customers c
+WHERE EXISTS (
+    SELECT 1
+    FROM Orders o
+    JOIN Payments p ON o.order_id = p.order_id
+    WHERE o.customer_id = c.customer_id
+);
